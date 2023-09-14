@@ -148,7 +148,7 @@ Machine::WriteMem(int virtAddr, int size, int value)
     ExceptionType exception;
     int physicalAddress;
 
-    DEBUG('a', "Writing VA 0x%x, size %d, value 0x%x\n", virtAddr, size, value);
+    //DEBUG('a', "Writing VA 0x%x, size %d, value 0x%x\n", virtAddr, size, value);
 
     exception = Translate(virtAddr, &physicalAddress, size, TRUE, TRUE);
     if (exception != NoException) {

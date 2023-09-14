@@ -33,6 +33,8 @@ SynchDisk *synchDisk;
 
 #ifdef USER_PROGRAM		// requires either FILESYS or FILESYS_STUB
 Machine *machine;		// user program memory and registers
+PageProvider * pageprovider;
+int numFork; 
 #endif
 
 #ifdef NETWORK
@@ -41,6 +43,7 @@ PostOffice *postOffice;
 #ifdef CHANGED
 #ifdef USER_PROGRAM
 ConsoleDriver *consoledriver;
+
 #endif
 #endif
 
@@ -183,6 +186,9 @@ Initialize (int argc, char **argv)
 
 #ifdef USER_PROGRAM
     machine = new Machine (debugUserProg);	// this must come first
+    pageprovider= new PageProvider();
+    numFork=0;
+
 #endif
 
 #ifdef FILESYS
@@ -230,10 +236,12 @@ Cleanup ()
 #endif
 
 #ifdef USER_PROGRAM
+    delete pageprovider;
     if (machine) {
         delete machine;
         machine = NULL;
     }
+   
 #endif
 
 #ifdef FILESYS_NEEDED

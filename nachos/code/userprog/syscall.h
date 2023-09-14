@@ -14,6 +14,7 @@
 #define SYSCALLS_H
 
 #include "copyright.h"
+
 #define USER_START_ADDRESS 0x80
 
 /* system call codes -- used by the stubs to tell the kernel which system call
@@ -39,10 +40,7 @@
 #define SC_GetInt 16
 #define SC_ThreadCreate 17
 #define SC_ThreadExit 18
-#define SC_P 19
-#define SC_V 20
-#define SC_createSemaphore 21
-#define SC_deleteSemaphore 22
+#define SC_ForkExec 19
 #ifdef IN_USER_MODE
 
 // LB: This part is read only on compiling the test/*.c files.
@@ -149,13 +147,7 @@ void PutInt(int n);
 void GetInt(int *n);
 int ThreadCreate(void f(void *arg), void *arg);
 void ThreadExit(void);
-void P();
-void V();
-void deleteSemaphore();
-void createSemaphore();
-
-
-
+int ForkExec(const char *s);
 #endif //CHANGED
 #endif // IN_USER_MODE
 

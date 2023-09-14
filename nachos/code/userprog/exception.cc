@@ -26,7 +26,7 @@
 #include "syscall.h"
 #ifdef CHANGED
 #include "userthread.h"
-#include "list.h"
+#include "userfork.h"
 #include "synch.h"
 #endif //CHANGED
 //----------------------------------------------------------------------
@@ -73,6 +73,7 @@ ExceptionHandler (ExceptionType which)
 {
     int type = machine->ReadRegister (2);
     int address = machine->registers[BadVAddrReg];
+    //Semaphore * mutex = new Semaphore("mutex",1);
     switch (which)
       {
         case SyscallException:
@@ -101,6 +102,7 @@ ExceptionHandler (ExceptionType which)
                   }
                 case SC_PutString:
                 {
+                  //mutex->P();
                   DEBUG('s',"PutString\n");
                   char * buff= (char *) malloc((MAX_STRING_SIZE)*sizeof(char));
                   int sizeRead=0;
@@ -118,6 +120,8 @@ ExceptionHandler (ExceptionType which)
                   }while(sizeRead>=MAX_STRING_SIZE-1);
                   
                   free(buff);
+                  //mutex->V();
+                  
                   break;
                 }
                 case SC_GetChar:
@@ -131,6 +135,7 @@ ExceptionHandler (ExceptionType which)
                   }
                 case SC_GetString:
                   {
+                    //mutex->P();
                     DEBUG('s',"GetString\n");
                     int sizeWrote=0;
                     int track=0;
@@ -157,10 +162,14 @@ ExceptionHandler (ExceptionType which)
                       sizeWrote=consoledriver->copyStringToMachine(machine->ReadRegister(4), buff, n-1);
                     }
                     free(buff);
+                    //mutex->V();
+                    //delete mutex;
                     break;
                   }
+                  /*
                 case SC_Exit:
                   {
+                    
                     //mutex->P();
                     DEBUG('s',"SC_Exit\n");
                     int returnValue= machine->ReadRegister(3);
@@ -170,6 +179,7 @@ ExceptionHandler (ExceptionType which)
                     //delete mutex;
                     break;
                   }
+                  */
                 case SC_PutInt:
                   {
                     //mutex->P();
@@ -201,40 +211,58 @@ ExceptionHandler (ExceptionType which)
                   case SC_ThreadExit:
                     {
                       DEBUG('s',"SC_ThreadExit\n");
-                      do_ThreadExit();
+                      do_ThreadExit(false);
                       //delete mutex;
                       break;
                     }
-                  case SC_P:
+              case SC_ForkExec:
                   {
-                    currentThread->space->P();
+                    numFork+=1;
+                    char buff[30];
+                    consoledriver->copyStringFromMachine(machine->ReadRegister(4),buff,50);
+                    do_ForkExec(buff);
+                    
                     break;
                   }
-                  case SC_V:
-                  {
-                      currentThread->space->V();
-                      break;
-                  }
-                  case SC_createSemaphore:
-                  {
-                    Semaphore *sem= new Semaphore("sem",1);
-                    currentThread->space->putSemaphore( sem);
+              case SC_Exit:
+              {
+                    DEBUG('o',"SC_Exit\n");
+                    DEBUG('o',"numFork : %d\n",numFork);
+                    int returnValue= machine->ReadRegister(3);
+                    printf("Return value : %d\n",returnValue);
+                    do_ThreadExit(true);
                     break;
-                  } 
-                  case SC_deleteSemaphore:
-                  {
-                    currentThread->space->deleteSemaphore();
-                    break;
-                  }
-                #endif //CHANGED 
+              }
+              case SC_Exec:
+                {
+                  char * buff= (char *) malloc(100*sizeof(char));
+                  consoledriver->copyStringFromMachine(machine->ReadRegister(4),buff,50);
+                  do_ForkExec(buff);
+                  free(buff);
+                  break;
+                }
+              case SC_Read:
+              {
+                char * buff= (char *) malloc(100*sizeof(char));
+                consoledriver->copyStringFromMachine(machine->ReadRegister(4),  buff, 50);
+                
+                break;
+              }
+              case SC_Write:
+              {
+                machine->WriteMem(machine->ReadRegister(4),machine->ReadRegister(5),machine->ReadRegister(6) );
+                break;
+              }
+                #endif //CHANGED
                 default:
                   {
-                    ASSERT_MSG(FALSE, "Unimplemented system call %d\n", type);
+                    //ASSERT_MSG(FALSE, "Unimplemented system call %d\n", type)
                   }
               }
 
             // Do not forget to increment the pc before returning!
             UpdatePC ();
+            
             break;
           }
 

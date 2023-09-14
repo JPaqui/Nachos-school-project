@@ -32,7 +32,7 @@
                                         // the disk sector size, for
                                         // simplicity
 
-#define NumPhysPages    64              // Increase this as necessary!
+#define NumPhysPages    128              // Increase this as necessary!
 #define MemorySize      (NumPhysPages * PageSize)
 #define TLBSize         4               // if there is a TLB, make it small
 
@@ -201,12 +201,12 @@ class Machine:public dontcopythis {
 
     TranslationEntry *currentPageTable;
     unsigned int currentPageTableSize;
-
   private:
     bool singleStep;            // drop back into the debugger after each
                                 // simulated instruction
     int runUntilTime;           // drop back into the debugger when simulated
                                 // time reaches this value
+    
 };
 
 extern void ExceptionHandler(ExceptionType which);

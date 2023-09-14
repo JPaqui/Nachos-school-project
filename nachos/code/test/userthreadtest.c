@@ -1,53 +1,36 @@
 #include "syscall.h"
 
 /*
-    Lancement du programme : ./nachos -rs 1234 -x ../test/userthreadtest dans le dossier userprog.
+    Lancement du programme : ./nachos -rs 1234 -d x -x ../test/userthreadtest dans le dossier userprog.
 
-    Ce programme permet de tester les fonctions nécessaires au bon fonctionnement des threads utilisateurs: ThreadCreate, ThreadExit ainsi que les fonctions pour les sémaphores
-    utilisateurs.
-
-    ThreadCreate prend en paramètre deux argument : la fonction que l'utilisateur veut exécuter dans le nouveau thread qui sera crée grâce ainsi qu'un argument de cette fonction.
-    Elle retourne 1 si la création s'est faite correctement, 0 si la création n'a pas pu être effectuée par manque d'espace mémoire.
-
-    ThreadExit ne prend pas d'argument et doit être appelée à la fin d'une fonction afin de terminer le thread utilisateur.
-
-    createSemaphore crée un sémaphore, deleteSemaphore le détruit.
-    P permet de prendre un token et de bloquer les threads suivants.
-    V permet de rendre un token et de libérer un des threads dormants.
+    Ce programme permet de tester la fonction ThreadCreate. Cette fonction prend en paramètre deux arguments : la fonction que l'utilisateur veut exécuter dans le nouveau
+    thread qui sera crée grâce à ThreadCreate ainsi que l'argument de cette fonction.
 
 */
 
-int f3(int x, int y){
-    return x * y;
-}
-
-void f( void* a){
-    createSemaphore();
-    P();
-    //PutInt(f3(4,6));
-    PutString(a);
-    V();
-    deleteSemaphore();
+void f(int a){
+    volatile int i = 0;
+    
+    //PutString(a);
+    //PutChar(a);
     ThreadExit();
 }
 
-void f2(void * b){
-    createSemaphore();
-    P();
-    PutString(b);
-    //PutInt(f3(4,6));
-    V();
-    deleteSemaphore();
+void f2(int b){
+    volatile int i = 0;
+    
+    PutString("Bonjour");
+    //PutChar(b);
     ThreadExit();
 }
+
 int main(){
-    //int i=0;
-    //for(; i<4;i++){
-    createSemaphore();
+    int i=0;
+    /*for (;i<30;i++){
+        ThreadCreate(f,"Bonjour");
+        ThreadCreate(f2,"Coucou");
+    }*/
     ThreadCreate(f,"Bonjour");
-    ThreadCreate(f,"Coucou");
-    deleteSemaphore();
-    //}
+    ThreadCreate(f2,"Coucou");
     ThreadExit();
-    return 3;
 }

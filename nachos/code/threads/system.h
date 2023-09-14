@@ -42,6 +42,9 @@ extern FileSystem *fileSystem;
 #ifdef CHANGED
 #ifdef USER_PROGRAM
 #include "consoledriver.h"
+#include "pageprovider.h"
+extern PageProvider * pageprovider;
+extern int numFork;
 extern ConsoleDriver *consoledriver;
 #define MAX_STRING_SIZE 60
 #endif

@@ -21,7 +21,6 @@
 #include "noff.h"
 #include "syscall.h"
 #include "synch.h"
-
 //----------------------------------------------------------------------
 // SwapHeader
 //      Do little endian to big endian conversion on the bytes in the
@@ -66,6 +65,30 @@ List AddrSpaceList;
 //      "executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
+static void ReadAtVirtual(OpenFile *executable, int virtualaddr,int numBytes, int position, TranslationEntry *pageTable,unsigned numPages){
+
+    //printf(" %x %x %x \n",virtualaddr, numBytes,position);
+
+    TranslationEntry * currentPageTable = machine->currentPageTable;
+    unsigned int currentPageTableSize = machine->currentPageTableSize;
+
+    machine->currentPageTable = pageTable;
+    machine->currentPageTableSize = numPages;
+
+    char buff[numBytes];
+    executable->ReadAt (buff,numBytes,position);
+
+    for(int i = 0; i < numBytes; i++){
+        machine->WriteMem(virtualaddr,1,buff[i]);
+        virtualaddr++;
+    }
+
+    machine->currentPageTable = currentPageTable;
+    machine->currentPageTableSize =currentPageTableSize;
+}
+
+
+
 AddrSpace::AddrSpace (OpenFile * executable)
 {
     unsigned int i, size;
@@ -96,7 +119,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++)
       {
-          pageTable[i].physicalPage = i;        // for now, phys page # = virtual page #
+          pageTable[i].physicalPage = pageprovider->GetEmptyPage();      // for now, phys page # = virtual page #
           pageTable[i].valid = TRUE;
           pageTable[i].use = FALSE;
           pageTable[i].dirty = FALSE;
@@ -108,35 +131,39 @@ AddrSpace::AddrSpace (OpenFile * executable)
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0)
       {
-          DEBUG ('a', "Initializing code segment, at 0x%x, size 0x%x\n",
+           DEBUG ('n', "Initializing code segment, at 0x%x, size 0x%x\n",
                  noffH.code.virtualAddr, noffH.code.size);
-          executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
-                              noffH.code.size, noffH.code.inFileAddr);
+          /*executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
+                              noffH.code.size, noffH.code.inFileAddr);*/
+            ReadAtVirtual(executable, noffH.code.virtualAddr, noffH.code.size, noffH.code.inFileAddr, pageTable, numPages);
       }
     if (noffH.initData.size > 0)
       {
-          DEBUG ('a', "Initializing data segment, at 0x%x, size 0x%x\n",
+          DEBUG ('n', "Initializing data segment, at 0x%x, size 0x%x\n",
                  noffH.initData.virtualAddr, noffH.initData.size);
-          executable->ReadAt (&
+          /*executable->ReadAt (&
                               (machine->mainMemory
                                [noffH.initData.virtualAddr]),
                               noffH.initData.size, noffH.initData.inFileAddr);
+                              */
+            ReadAtVirtual(executable, noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr, pageTable, numPages);
       }
+    machine->DumpMem("pages.svg");
 
     DEBUG ('a', "Area for stacks at 0x%x, size 0x%x\n",
            size - UserStacksAreaSize, UserStacksAreaSize);
 
     pageTable[0].valid = FALSE;			// Catch NULL dereference
-    queue = new List;  
-
-    bitmap = new BitMap(UserStacksAreaSize/256);
+    bitmap= new BitMap(UserStacksAreaSize/256);
     bitmap->Mark(0);
-    currentThread->find = 0;
-    cptThread = 1;
-    semaphore = new Lock("semaphore");
-    
+    currentThread->find=0;
+    cptThread=1;
+    semaphore= new Lock("semaphore");
     AddrSpaceList.Append(this);
+    
 }
+
+
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
@@ -145,10 +172,15 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 AddrSpace::~AddrSpace ()
 {
+     for (unsigned int i = 0; i < numPages; i++){
+    DEBUG('s',"%d\n",i);
+    pageprovider->ReleasePage(pageTable[i].physicalPage);
+  }
   delete [] pageTable;
   pageTable = NULL;
-  delete queue;
   AddrSpaceList.Remove(this);
+
+  
 }
 
 //----------------------------------------------------------------------
@@ -183,15 +215,11 @@ AddrSpace::InitRegisters ()
     DEBUG ('a', "Initializing stack register to 0x%x\n",
            numPages * PageSize - 16);
 }
-
-
 #ifdef CHANGED
 uint AddrSpace::AllocateUserStack(int value){
     return  numPages*PageSize- value-16;
 }
 #endif //CHANGED
-
-
 //----------------------------------------------------------------------
 // AddrSpace::Dump
 //      Dump program layout as SVG
@@ -280,6 +308,7 @@ DumpAddrSpaces(FILE *output,
     }
 }
 
+
 //----------------------------------------------------------------------
 // AddrSpace::SaveState
 //      On a context switch, save any machine state, specific
@@ -307,30 +336,3 @@ AddrSpace::RestoreState ()
     machine->currentPageTable = pageTable;
     machine->currentPageTableSize = numPages;
 }
-Semaphore * AddrSpace::getSemaphore(){
-    ListElement *element;
-    Semaphore *space;
-    for (element = queue->FirstElement ();
-         element;
-         element = element->next) {
-        space = (Semaphore*) element->item;
-        return space;
-    }
-    return NULL;
-}
-void AddrSpace::putSemaphore(Semaphore * sem){
-    queue->Prepend(sem);
-}
-void AddrSpace::P(){
-    getSemaphore()->P();
-}
-void AddrSpace::V(){
-    getSemaphore()->V();
-}
-void AddrSpace::deleteSemaphore(){
-    Semaphore * sem=(Semaphore *) queue->Remove();
-    delete sem;
-}
-
-
-

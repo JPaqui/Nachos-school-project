@@ -153,6 +153,7 @@ Condition::Condition (const char *debugName)
     (void) debugName;
     queue = new List;
     lock = new Lock("lock");
+    //ASSERT_MSG(FALSE, "TODO\n");
 }
 
 Condition::~Condition ()
@@ -161,7 +162,8 @@ Condition::~Condition ()
     delete lock;
 }
 
-void Condition::Wait (Lock * conditionLock)
+void
+Condition::Wait (Lock * conditionLock)
 {
     conditionLock= lock;
     queue->Append ((void *) conditionLock);  
@@ -173,13 +175,15 @@ void Condition::Signal (Lock * conditionLock)
 
     conditionLock-> Release();
     queue->Remove ();
+    //ASSERT_MSG(FALSE, "TODO\n");
 }
-
-void Condition::Broadcast (Lock * conditionLock)
+void
+Condition::Broadcast (Lock * conditionLock)
 {
     (void) conditionLock;
     while (!(queue==NULL)){
             lock = (Lock *)queue->Remove ();
             lock->Release();
     }
+    //ASSERT_MSG(FALSE, "TODO\n");
 }

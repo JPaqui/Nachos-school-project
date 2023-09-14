@@ -35,6 +35,7 @@ class AddrSpace:public dontcopythis
     void InitRegisters (void);  // Initialize user-level CPU registers,
     // before jumping to user code
 
+
     
     #ifdef CHANGED
     public:
@@ -42,12 +43,7 @@ class AddrSpace:public dontcopythis
       BitMap * bitmap;
       int cptThread;
       Lock * semaphore;
-      Semaphore * getSemaphore();
-      void putSemaphore(Semaphore * sem);
-      void deleteSemaphore();
-      void P();
-      void V();
-      List * queue;
+       List * listThread;
     #endif //CHANGED
 
 
@@ -66,6 +62,7 @@ class AddrSpace:public dontcopythis
 
     TranslationEntry * pageTable; // Page table
     unsigned int numPages;      // Number of pages in the page table
+
 };
  
 extern List AddrspaceList;

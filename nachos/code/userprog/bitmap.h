@@ -48,7 +48,9 @@ class BitMap:public dontcopythis
     // write the bitmap to a file
     void FetchFrom (OpenFile * file); // fetch contents from disk
     void WriteBack (OpenFile * file); // write contents to disk
-
+    int GetNumBits(){
+      return numBits;
+    }
   private:
     int numBits;                // number of bits in the bitmap
     int numWords;               // number of words of bitmap storage

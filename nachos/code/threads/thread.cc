@@ -64,7 +64,7 @@ Thread::Thread (const char *threadName)
     status = JUST_CREATED;
 #ifdef USER_PROGRAM
     space = NULL;
-    find = -123;
+    find = -0;
     // must be explicitly set to 0 since when Enabling interrupts,
     // DelayedLoad is called !!!
     userRegisters[LoadReg] = 0;
