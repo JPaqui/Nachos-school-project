@@ -1,0 +1,117 @@
+I . Bilan
+Nous avons implémenté le traitement EOF par la fonction consoleTest, l'ajout des fonctions synchrones putChar et getChar.
+La fonction getChar attend qu'un caractère soit envoyé puis le lis et le retourne.
+La fonction putChar quant à elle écrit directement le charactère en validant directement l'écriture ( ré-initialise à false la variable booléenne qui vérifie que seulement une personne écrit à la fois), cela permit une écriture synchrone. La validation du traitement est gérée dans la fonction.
+Nous avons essayé les fonctions en lui passant des arguments in (fichier déjà crée) et out.
+La fonction GetString, il se peut qu'il y ait des bugs que l'on ne pas résolu. Par exemple si l'utilisateur envoie certains caractères ils risquent de ne pas être pris en compte
+La fonction PutString, Nous n'avons pas trouvé de bug, Les tests ont été faits sur des grosses chaînes,des petites chaînes avec un buffer de taille petite/de taille moyenne/ de grande taille
+La Fonction PutInt, si l'utilisateur envoie autre chose qu'un entier, contrairement au vrai PutInt il ne redemandera pas de saisir à nouveau. Il faut que l'utilisateur suive à la lettre la consigne.
+La fonction GetInt??
+La récupération de la valeur de retour a été implémenté de sorte à ce qu'elle soit placée dans le 3 ème registre. Il peut être utile à l'avenir.
+Nous avons implémenté un sémaphore dans exception.cc, pour qu'un processus bloque les autres processus au niveau noyau.
+Le sémaphore permet d'éviter que plusieurs processus écrivent/lisent dans le même emplacement mémoire à la fois
+Nous aurions très bien pu le mettre dans consoleDriver mais nous estimons estime qu'il est plus pertinent dans exception.cc, chaque thread exécutera chaque fonction de la librairie plutôt que tous en même temps ou attendant que chaque thread attende que le processus finisse d'exécuter les fonctions consoledriver.
+
+II . Points délicats
+Les deux points délicats à implémenter sont PutString et GetString:
+Pour PutString, Il y a plusieurs cas qui posent problème.
+- Soit l'utilisateur a rentré une chaine en paramètre plus petite que la taille du buffer de la machine, dans ce cas il suffit de récupérer seulement les éléments de la chaine de charactère en mémoire et de les afficher dans la console à l'aide de la fonction PutChar, charactère par charactère
+- Dans l'autre cas, Il faut lire la chaine tant que l'on a lu autant de charactère que la taille de la buffer, chaque itération correspond à une lecture entière du buffer pour l'afficher dans la console, le dernier élément étant un \0. Ce \0 est nécessaire sinon il entraine la lecture d'une case mémoire de trop. Donc on ne lit que MAX_SIZE_BUFFER-1 par itération. Il faut aussi penser à garder l'emplacement (track) de la case mémoire sur laquelle on lit
+Pour GetString, Il y a plusieurs cas qui posent problème comme pour PutString.
+- Soit L'argument n passé en paramètre est inférieur à la taille du buffer. Il suffit simplement de faire une boucle de GetChar et qui les placer un par un dans la chaine de charactère. Ils seront ainsi écrit en mémoire jusqu'à la énième case demandée.
+-Soit n est supérieur au buffer dans ce cas, il faut récupérer size du buffer -1 caractères. Lorsque qu'il reste moins de caractères à récupérer que la taille du buffer il faut simplement récupérer que le nombre restant de caractères.
+Pour que le programme se termine en récupérant la valeur de retour, on passe la valeur au registre du registre 2 (là où normalement la valeur de retour est enregistré puis écrasé par SC_EXIT) vers le registre 3 (non utilisé).
+
+III . Limitations
+Dans la fonction PutInt, 
+
+
+
+
+IV . Tests
+
+Pour chaque fonction implémentée, il a fallu faire des programmes de tests afin de vérifier que celles-ci fonctionnent de la manière voulue. Nous avons testé différents paramètres afin de vérifier le maximum de conditions.
+
+il manque:
+
+III.5/ option -sc pour lancer consoledrivertest dans threads/main.cc
+
+IV.2/ declaration des fonctions putchar, getchar, putstring etc.... dans userprog/syscall.h
+
+
+
+
+TESTS:
+
+PutChar:
+
+La fonction PutChar étant relativement simple, il suffit de passer un code 
+entier d'un caractère tout en restant dans la limite des codes ascii afin de la 
+tester correctement.
+
+Par exemple, l'appel à la fonction PutChar(97) affiche bien le caractère 'a' correspondant
+au code ASCII 97.
+Inversement, l'appel à la fonction PutChar('a') affiche lui aussi le caractère 'a'.
+
+La fonction "print" donnée dans le sujet permet également de tester la fonction en
+faisant une boucle et ajoute à chaque fois 1 au code de l'entier de départ. 
+En l'appelant avec 'a' en caractère de base (code 97) et en faisant 3 tours de boucle,
+on obtient correctement "abcd" dans la console.
+
+Si on teste avec une valeur supérieure à 255 ou inférieure à 1, la fonction n'affiche rien 
+puisque ces entiers ne correspondent plus à des codes de caractères ASCII. 
+
+PutString:
+
+La fonction PutString a nécessité beaucoup de tests pour savoir si elle fonctionnait 
+correctement. Il a fallu réflechir à propos de la taille de la chaine de caractères
+passée en paramètre et de la taille de la chaine de caractères maximale que la fonction 
+peut lire en une fois.
+Les tests ont donc consisté à modifier et tester à chaque fois les tailles 
+des ces deux éléments: donner des petites et grandes valeurs à MAX_STRING_SIZE et à la 
+chaine de caractères passée en paramètre dans le programme de test.
+
+Par exemple, soit MAX_STRING_SIZE égal à 10 et une chaine de caractère en paramètre de 
+taille 50, lors de l'appel à PutString(chaine), la console affiche correctement la chaine
+complète de taille 50.
+Cela fonctionne également, lorsqu'on passe une chaine vide: cela n'affiche rien ou encore
+lorsque la taille de la chaine de caractère est plus petite que MAX_STRING_SIZE
+
+
+GetChar:
+
+Pour tester correctement la fonction GetChar, on utilise PutChar avec la 
+valeur de retour de GetChar afin de l'afficher sur la console puis on vérifie si
+cela correspond bien au caractère que l'on a écrit dans la console au départ.
+
+Par exemple, lorsqu'on écrit le caractère 'a' dans la console, GetChar 
+récupère bien le caractère et ensuite, sa valeur de retour passée dans PutChar réaffiche
+correctement le caractère 'a' initialement entrée dans la console.
+
+GetString:
+
+Pour tester correctement GetString, il a fallu beaucoup toucher aux valeurs de 
+MAX_STRING_SIZE, du deuxième paramètre de GetString ainsi qu'à la chaine de caractères
+entrée par l'utilisateur. Tout ceci, étant globalement similaire à la méthode utilisée 
+pour PutString, permet de vérifier que l'intégralité de la chaine de caractère entrée 
+par l'utilisateur est bien stockée au fur et à mesure dans le buffer.
+
+Même genre d'exemple qu'avec PutString, une chaine de caractère de taille 5 inférieure 
+la taille du buffer de 20 renvoie correctement la chaine en entier quelque soit la 
+valeur de MAX_STRING_SIZE (ici 60).
+Par contre, lorsqu'une chaine passé en paramètre dépasse la taille n atttribuée au buffer,
+le caractère n+1 n'est pas lu et la chaine le saute directement pour aller au n+2.
+
+Par exemple, lorsque l'on passe "abcdefghijklmnopqrstuvwxyz" en chaine et une taille de 15,
+le 16ème caractère est sauté. La console affiche donc l'alphabet sans la lettre 'p', encore
+une fois, quelque soit la valeur de MAX_STRING_SIZE.
+
+
+
+
+
+
+
+
+
+
